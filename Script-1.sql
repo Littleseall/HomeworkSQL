@@ -70,7 +70,8 @@ INSERT INTO Albums (title, release_year) VALUES
 ('One More Light', 2017), 
 ('Hypnotize', 2005),
 ('Wishmaster', 2000),
-('Human.:II:Nature', 2020);
+('Human.:II:Nature', 2020),
+('Album', 2024);
 
 INSERT INTO Tracks (title, duration, album_id) VALUES 
 ('Lost', '00:02:52', 1),
@@ -79,7 +80,18 @@ INSERT INTO Tracks (title, duration, album_id) VALUES
 ('Talking to Myself', '00:03:51', 2),
 ('Lonely Day', '00:02:47', 3),
 ('Wishmaster', '00:04:24', 4),
-('Noise', '00:05:40', 5);
+('Noise', '00:05:40', 5),
+('myself', '00:03:30', 6),  
+('by myself', '00:03:45', 6),  
+('bemy self', '00:02:50', 6),  
+('myself by', '00:04:05', 6),  
+('by myself by', '00:03:25', 6),  
+('beemy', '00:02:20', 6),  
+('premyne', '00:03:15', 6),  
+('my own', '00:03:15', 6),
+('own my', '00:03:15', 6),
+('my', '00:03:15', 6),
+('oh my god', '00:03:15', 6);
 
 INSERT INTO Artist_Genre (artist_id, genre_id) VALUES 
 (1, 1), 
@@ -129,10 +141,13 @@ WHERE release_year BETWEEN 2018 AND 2020;
 SELECT name
 FROM Artists
 WHERE name NOT LIKE '% %';
-
-SELECT title
-FROM Tracks
-WHERE title LIKE '%My%';
+   
+SELECT title 
+FROM tracks 
+WHERE title ILIKE 'my'             
+or title ILIKE 'my %'           
+or title ILIKE '% my'           
+or title ILIKE '% my %';
 
 --Задание 3:
 
@@ -155,10 +170,12 @@ JOIN Tracks ON albums.id = tracks.album_id
 GROUP BY albums.title;
 
 SELECT DISTINCT artists.name
-   FROM Artists
-   LEFT JOIN Album_Artist ON artists.id = Album_Artist.artist_id
-   LEFT JOIN Albums ON Album_Artist.album_id = Albums.id AND Albums.release_year = 2020
-   WHERE Albums.id IS NULL;
+FROM Artists
+WHERE artists.id NOT IN (
+    SELECT DISTINCT Album_Artist.artist_id
+    FROM Album_Artist
+    JOIN Albums ON Album_Artist.album_id = Albums.id
+    WHERE Albums.release_year = 2020);
   
 SELECT Collection.title
    FROM Collection
@@ -170,11 +187,11 @@ SELECT Collection.title
   
 --Задание 4
   
-SELECT albums.title
+SELECT DISTINCT albums.title
 FROM Albums
 JOIN Album_Artist ON albums.id = Album_Artist.album_id
 JOIN Artist_Genre ON Album_Artist.artist_id = Artist_Genre.artist_id
-GROUP BY albums.title
+GROUP BY albums.title, Album_Artist.artist_id
 HAVING COUNT(DISTINCT Artist_Genre.genre_id) > 1;
   
 SELECT tracks.title
@@ -182,16 +199,15 @@ FROM Tracks
 LEFT JOIN Tracks_Collection ON tracks.id = Tracks_Collection.tracks_id
 WHERE Tracks_Collection.collection_id IS NULL;
 
-SELECT artists.name
-FROM Artists
-JOIN Tracks ON artists.id = (
-    SELECT Album_Artist.artist_id
-    FROM Album_Artist
-    WHERE Album_Artist.album_id = tracks.album_id
-    LIMIT 1)
-WHERE tracks.duration = (
-    SELECT MIN(duration)
-    FROM Tracks);
+
+SELECT artists.name, tracks.duration 
+FROM tracks 
+LEFT JOIN albums ON albums.id = tracks.album_id 
+LEFT JOIN Album_Artist ON Album_Artist.album_id = albums.id 
+LEFT JOIN artists ON Album_Artist.artist_id = artists.id 
+WHERE tracks.duration = (SELECT MIN(duration) FROM tracks) 
+ORDER BY tracks.duration;
+
 
 WITH album_small AS (
     SELECT album_id, COUNT(*) AS tc
